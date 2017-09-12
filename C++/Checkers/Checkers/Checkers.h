@@ -3,6 +3,7 @@
 #include <map>
 #include <cstdint>
 #include <iostream>
+#include <set>
 
 enum Side{Black, White};
 
@@ -27,10 +28,14 @@ class Board {
 private:
 	std::map<Position, Piece> pieces;
 public:
+	friend bool operator<(const Board&, const Board&);
 	static Board getDefaultBoard();
+	std::set<Board*> getNextStates(Side);
+	std::set<Board*> getNextStatesWithMoveFrom(const Position);
 	std::map<Position, Piece> getPiecesOnSide(Side);
-	void placePiece(Position, Piece);
-	const Piece* getPiece(Position) const;
+	void placePiece(const Position, const Piece);
+	inline void removePiece(const Position);
+	Piece* getPiece(Position) const;
 	friend std::ostream& operator<<(std::ostream&, const Board&);
 };
 class Game {
