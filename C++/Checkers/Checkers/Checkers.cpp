@@ -14,14 +14,30 @@ void wait() {
 int main()
 {
 	Board b = Board::getDefaultBoard();
-	std::set<Board*> next = b.getNextStates(White);
-	for (auto const& current : next) {
-
-		std::cout << "new:" << (*current) << std::endl;
-	}
+	//std::set<Board*> next;
+	//next.insert(&b);
+	//b.placePiece(Position(4, 4), White);
+	//b.removePiece(Position(0, 1));
+	//std::set<Board*> next = b.getNextStates(White);
+	std::set<Board*> next = b.getNextStatesWithMoveFrom(Position(5, 2));
 	std::cout << b << std::endl;
+	//wait();
+	//return 0;
+/*
+	std::map<Position, Piece> myMap = b.getPiecesOnSide(White);
+
+	for (auto const &dank: myMap) {
+		std::cout << dank.first << " " << dank.second << " " << std::endl;
+	}
+	
+	*/
+	for (auto const &current : next) {
+		std::cout << "new:" << *current/*.getPiece(Position(1, 1))*/ << std::endl;
+	}
+	
 	wait();
     return 0;
+	
 }
 
 

@@ -17,12 +17,15 @@ std::set<Board*> Board::getNextStates(Side toMove) {
 }
 
 std::set<Board*> Board::getNextStatesWithMoveFrom(const Position p) {
-	int moves[4][2] = { {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+	int moves[4][2] = { {1, 1}, {1, -1}, {-1, 1}, {-1, -1}}; //white is the first two. black is the second two.
 	std::set<Board*> next;
 	const Piece* piece = getPiece(p);
 	int movesToCheck = piece->isKing ? 4 : 2;
+	int sideOffset = piece->side == White || piece->isKing ? 0 : 2;
 
-	for (int i = 0; i < movesToCheck; i++) {
+	//if movesToCheck
+
+	for (int i = sideOffset; i < movesToCheck + sideOffset; i++) {
 		const Position endPos = Position(p.x + moves[i][0], p.y + moves[i][1]);
 		const Piece* endPiece = getPiece(endPos);
 		if (endPiece == nullptr) {
@@ -57,7 +60,7 @@ std::map<Position, Piece> Board::getPiecesOnSide(Side s) {
 }
 
 Board Board::getDefaultBoard() {
-	Board b = Board();
+	Board b;
 	for (int y = 0; y < 3; y++) {
 		for (int x = 0; x < 8; x++) {
 			if ((x + y) % 2 == 1) {
@@ -75,32 +78,56 @@ Board Board::getDefaultBoard() {
 	return b;
 }
 
+std::ostream& operator<<(std::ostream& os, const Piece& p) {
+	if (p.side == White) {
+		if (p.isKing) {
+			os << "W";
+		}
+		else {
+			os << "w";
+		}
+	}
+	else {
+		if (p.isKing) {
+			os << "B";
+		}
+		else {
+			os << "b";
+		}
+	}
+
+	return os;
+}
+
 std::ostream& operator<<(std::ostream& o, const Board& b) {
+	o << "--------" << std::endl;
 	for (int y = 7; y >= 0; y--) {
 		for (int x = 0; x < 8; x++) {
 			o << "dealing with " << x << ", " << y << std::endl;
-			const Position pos = Position(x, y);
-			const Piece* p = b.getPiece(pos);
+			//Position pos = Position(x, y);
+			const Piece* p = b.getPiece(Position(x, y));
 			if (p == nullptr) {
 				o << " ";
-			} else if (p->side == White) {
-				o << "w";
-			} else if (p->side == Black) {
-					o << "b";
-			} 
+			}
+			else {
+				o << (*p) << "(<-" << x << " " << y << ") ";
+			}
 		}
 		o << std::endl;
 	}
+	o << "--------" << std::endl;
 
 	return o;
 }
 
-inline Piece* Board::getPiece(Position pos) const {
-	std::map<Position, Piece>::iterator out = pieces.find(pos);
+inline const Piece* Board::getPiece(const Position& pos) const {
+	std::cout << pos.x << " " << pos.y << std::endl;
+	std::map<Position, Piece>::const_iterator out;
+	out = pieces.find(pos);
 	if (out == pieces.end()) {
 		return nullptr;
 	} else {
-		return &((*out).second);
+		return &(out->second);
 	}
 }
 
