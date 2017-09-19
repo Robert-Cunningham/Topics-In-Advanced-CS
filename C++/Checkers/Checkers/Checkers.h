@@ -12,6 +12,7 @@ public:
 	int x;
 	int y;
 	Position(int myx, int myy) : x(myx), y(myy) {};
+	bool isValid() const;
 };
 
 class Piece {
@@ -31,8 +32,8 @@ private:
 public:
 	friend bool operator<(const Board&, const Board&);
 	static Board getDefaultBoard();
-	std::set<Board*> getNextStates(Side);
-	std::set<Board*> getNextStatesWithMoveFrom(const Position);
+	std::set<Board> getNextStates(Side);
+	void getNextStatesWithMoveFrom(std::set<Board>& results, const Position);
 	std::map<Position, Piece> getPiecesOnSide(Side);
 	void placePiece(const Position, const Piece);
 	inline void removePiece(const Position);

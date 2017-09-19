@@ -19,8 +19,10 @@ int main()
 	//b.placePiece(Position(4, 4), White);
 	//b.removePiece(Position(0, 1));
 	//std::set<Board*> next = b.getNextStates(White);
-	std::set<Board*> next = b.getNextStatesWithMoveFrom(Position(5, 2));
-	std::cout << b << std::endl;
+	//std::set<Board> next;
+	//b.getNextStatesWithMoveFrom(next, Position(5, 2));
+	std::set<Board> next = b.getNextStates(White);
+	//std::cout << b << std::endl;
 	//wait();
 	//return 0;
 /*
@@ -32,7 +34,7 @@ int main()
 	
 	*/
 	for (auto const &current : next) {
-		std::cout << "new:" << *current/*.getPiece(Position(1, 1))*/ << std::endl;
+		std::cout << "new:" << current/*.getPiece(Position(1, 1))*/ << std::endl;
 	}
 	
 	wait();
