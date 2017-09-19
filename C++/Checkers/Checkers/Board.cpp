@@ -2,8 +2,9 @@
 #include "Checkers.h"
 #include <map>
 #include <set>
+#include <algorithm>
 
-std::set<Board> Board::getNextStates(Side toMove) {
+std::set<Board> Board::getNextStates() const {
 	std::map<Position, Piece> myPieces = getPiecesOnSide(toMove);
 	std::map<Position, Piece>::iterator it;
 	std::set<Board> moves; //this is probably a memory leak.
@@ -15,7 +16,38 @@ std::set<Board> Board::getNextStates(Side toMove) {
 	return moves;
 }
 
-void Board::getNextStatesWithMoveFrom(std::set<Board>& next, const Position p) {
+int Board::negamax(int depth, int alpha, int beta) const { //https://en.wikipedia.org/wiki/Negamax thanks for the algo reminder
+	if (depth == 0) {
+		return getValue();
+	}
+
+	std::set<Board> nextStates = getNextStates();
+	int best = INT_MIN; //must initialize;
+	for (auto const& currentState : nextStates) {
+		int val = currentState.negamax(depth-1, -1 * beta, -1 * alpha);
+		best = std::max(val, best);
+		alpha = std::max(alpha, val);
+
+		if (alpha >= beta) {
+			break;
+		}
+	}
+
+	return best;
+
+}
+
+int Board::getValue() const {
+	return 0;
+}
+
+void Board::swapToMove() {
+	if (toMove == White) {
+		toMove = Black;
+	}
+}
+
+void Board::getNextStatesWithMoveFrom(std::set<Board>& next, const Position p) const {
 	int moves[4][2] = { {1, 1}, {-1, 1}, {1, -1}, {-1, -1}}; //white is the first two. black is the second two.
 	const Piece* piece = getPiece(p);
 	int movesToCheck = piece->isKing ? 4 : 2;
@@ -32,6 +64,7 @@ void Board::getNextStatesWithMoveFrom(std::set<Board>& next, const Position p) {
 			Board current = Board(*this);
 			current.removePiece(Position(p.x, p.y));
 			current.placePiece(endPos, *piece);
+			current.swapToMove();
 			next.insert(current);
 		} else if (endPiece->side == piece->side) {
 			continue;
@@ -41,7 +74,7 @@ void Board::getNextStatesWithMoveFrom(std::set<Board>& next, const Position p) {
 	}
 }
 
-std::map<Position, Piece> Board::getPiecesOnSide(Side s) {
+std::map<Position, Piece> Board::getPiecesOnSide(Side s) const {
 	std::map<Position, Piece> out;
 
 	for (int y = 0; y < 8; y++) {
@@ -74,6 +107,8 @@ Board Board::getDefaultBoard() {
 			}
 		}
 	}
+
+	b.toMove = White;
 	return b;
 }
 

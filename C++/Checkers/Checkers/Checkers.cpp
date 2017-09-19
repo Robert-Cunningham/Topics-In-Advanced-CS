@@ -21,7 +21,7 @@ int main()
 	//std::set<Board*> next = b.getNextStates(White);
 	//std::set<Board> next;
 	//b.getNextStatesWithMoveFrom(next, Position(5, 2));
-	std::set<Board> next = b.getNextStates(White);
+	std::set<Board> next = b.getNextStates();
 	//std::cout << b << std::endl;
 	//wait();
 	//return 0;
