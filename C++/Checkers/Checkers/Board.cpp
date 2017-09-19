@@ -16,15 +16,33 @@ std::set<Board> Board::getNextStates() const {
 	return moves;
 }
 
-int Board::negamax(int depth, int alpha, int beta) const { //https://en.wikipedia.org/wiki/Negamax thanks for the algo reminder
+std::pair<int, Move> Board::negamax(int depth, int alpha, int beta) const { //https://en.wikipedia.org/wiki/Negamax thanks for the algo reminder
 	if (depth == 0) {
-		return getValue();
+		return std::make_pair(getValue(), mostRecentMove);
+	}
+	std::set<Board> nextStates = getNextStates();
+
+	if (nextStates.size() == 0) {
+		//the current player loses.
+		if (toMove == White) {
+			return std::make_pair(INT_MIN, mostRecentMove);
+		}
+		else {
+			return std::make_pair(INT_MAX, mostRecentMove);
+		}
 	}
 
-	std::set<Board> nextStates = getNextStates();
+	Move bestMove = Move(White, Position(77, 77), Position(77, 77));
+
 	int best = INT_MIN; //must initialize;
 	for (auto const& currentState : nextStates) {
-		int val = currentState.negamax(depth-1, -1 * beta, -1 * alpha);
+		int val;
+		Move otherMove = Move(White, Position(77, 77), Position(77, 77)); //figure out wtf is going on here;
+		std::tie(val, otherMove) = currentState.negamax(depth - 1, -1 * beta, -1 * alpha);
+		if (val > best) {
+			best = val;
+			bestMove = currentState.mostRecentMove;
+		}
 		best = std::max(val, best);
 		alpha = std::max(alpha, val);
 
@@ -33,17 +51,19 @@ int Board::negamax(int depth, int alpha, int beta) const { //https://en.wikipedi
 		}
 	}
 
-	return best;
-
+	return std::make_pair(best, mostRecentMove);
 }
 
 int Board::getValue() const {
 	return 0;
 }
 
-void Board::swapToMove() {
+void Board::swapActivePlayer() {
 	if (toMove == White) {
 		toMove = Black;
+	}
+	else {
+		toMove = White;
 	}
 }
 
@@ -64,7 +84,7 @@ void Board::getNextStatesWithMoveFrom(std::set<Board>& next, const Position p) c
 			Board current = Board(*this);
 			current.removePiece(Position(p.x, p.y));
 			current.placePiece(endPos, *piece);
-			current.swapToMove();
+			current.swapActivePlayer();
 			next.insert(current);
 		} else if (endPiece->side == piece->side) {
 			continue;

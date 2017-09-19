@@ -21,15 +21,24 @@ public:
 	bool isKing;
 	Piece(Side mySide, bool amKing = false) : side(mySide), isKing(amKing) {};
 	Piece() : side(White), isKing(false) {
-		std::cout << "P-100" << std::endl;
+		//std::cout << "P-100" << std::endl;
 	};
 	friend std::ostream& operator<<(std::ostream&, const Piece&);
+};
+
+class Move {
+public:
+	Piece p;
+	Position before;
+	Position after;
+	Move(Piece myPiece = Piece(White), Position myBeforePos = Position(77, 77), Position myAfterPos = Position(77, 77)) : p(myPiece), before(myBeforePos), after(myAfterPos) {};
 };
 
 class Board {
 private:
 	std::map<Position, Piece> pieces;
 	Side toMove;
+	Move mostRecentMove;
 public:
 	friend bool operator<(const Board&, const Board&);
 	static Board getDefaultBoard();
@@ -41,8 +50,8 @@ public:
 	const Piece* getPiece(const Position&) const;
 	friend std::ostream& operator<<(std::ostream&, const Board&);
 	int getValue() const;
-	int negamax(int, int, int) const;
-	void swapToMove();
+	std::pair<int, Move> negamax(int, int, int) const;
+	void swapActivePlayer();
 };
 class Game {
 	Board board;
