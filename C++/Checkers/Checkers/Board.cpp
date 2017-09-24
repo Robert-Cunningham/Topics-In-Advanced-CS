@@ -3,6 +3,9 @@
 #include <map>
 #include <set>
 #include <algorithm>
+#include <string>
+#include <vector>
+#include <math.h>
 
 std::set<Board> Board::getNextStates() const {
 	std::map<Position, Piece> myPieces = getPiecesOnSide(toMove);
@@ -14,6 +17,10 @@ std::set<Board> Board::getNextStates() const {
 	}
 
 	return moves;
+}
+
+Move Board::findBestMove(int depth) const {
+	return negamax(depth, INT_MIN, INT_MAX).second;
 }
 
 std::pair<int, Move> Board::negamax(int depth, int alpha, int beta) const { //https://en.wikipedia.org/wiki/Negamax thanks for the algo reminder
@@ -37,7 +44,7 @@ std::pair<int, Move> Board::negamax(int depth, int alpha, int beta) const { //ht
 	int best = INT_MIN; //must initialize;
 	for (auto const& currentState : nextStates) {
 		int val;
-		Move otherMove = Move(White, Position(77, 77), Position(77, 77)); //figure out wtf is going on here;
+		Move otherMove = Move(White, Position(77, 77), Position(77, 77)); //figure out wtf is going on here; pretty sure this is what the next move after this one would be.
 		std::tie(val, otherMove) = currentState.negamax(depth - 1, -1 * beta, -1 * alpha);
 		if (val > best) {
 			best = val;
@@ -54,8 +61,56 @@ std::pair<int, Move> Board::negamax(int depth, int alpha, int beta) const { //ht
 	return std::make_pair(best, mostRecentMove);
 }
 
+void Board::readMove() {
+	std::string move;
+	std::cin >> move;
+
+	std::vector<Position> moves;
+
+	for (int currentIndex = 0; currentIndex < move.length() / 2; currentIndex++) {
+		int y = move.at(currentIndex * 2) - 'a';
+		int x = move.at(currentIndex * 2 + 1) - '1';
+		Position p = Position(x, y);
+		moves.push_back(p);
+
+		std::cout << p.x << "," << p.y << std::endl;
+	}
+
+	for (int currentIndex = 0; currentIndex < moves.size(); currentIndex++) {
+		if (currentIndex == 0) {
+			const Piece* myPiece = new Piece(*getPiece(moves.at(0)));
+			if (myPiece == nullptr) {
+				std::cout << "Illegal move." << std::endl;
+			}
+			else {
+				removePiece(moves.at(0));
+				placePiece(moves.at(moves.size() - 1), *myPiece);
+			}
+		} 
+
+		if (currentIndex > 0) { //check for a jump between this move and the previous one.
+			int xd = moves.at(currentIndex).x - moves.at(currentIndex - 1).x;
+			int yd = moves.at(currentIndex).y - moves.at(currentIndex - 1).y;
+
+			if (abs(xd) == 2 && abs(yd) == 2) {
+				Position deadPos = Position(moves.at(currentIndex - 1).x + xd / 2, moves.at(currentIndex - 1).y + yd / 2);
+				removePiece(deadPos);
+			}
+		}
+	}
+
+}
+
 int Board::getValue() const {
-	return 0;
+	const int KINGVAL = 3;
+	const int NORMVAL = 1;
+	const int PERRANK = 1;
+	int blackCount = 0;
+	int whiteCount = 0;
+	for (auto const& x : pieces) {
+		(x.second.side == White ? whiteCount : blackCount) += (x.second.isKing ? KINGVAL : NORMVAL) + (x.second.side == White ? x.first.y : 7-x.first.y)*PERRANK; // betcha haven't seen any code as messy as this in a while!
+	}
+	return whiteCount - blackCount;
 }
 
 void Board::swapActivePlayer() {
@@ -89,7 +144,36 @@ void Board::getNextStatesWithMoveFrom(std::set<Board>& next, const Position p) c
 		} else if (endPiece->side == piece->side) {
 			continue;
 		} else if (endPiece->side != piece->side) {
-			//Jumping code.
+			getNextStatesWithJumpFrom(next, p);
+		}
+	}
+}
+
+void Board::getNextStatesWithJumpFrom(std::set<Board>& possibilities, const Position p) const { //Add all the possible jumps from this position.
+	int moves[4][2] = { {1, 1}, {-1, 1}, {1, -1}, {-1, -1}}; //white is the first two. black is the second two.
+	const Piece* piece = getPiece(p);
+	int movesToCheck = piece->isKing ? 4 : 2;
+	int sideOffset = piece->side == White || piece->isKing ? 0 : 2;
+
+	for (int i = sideOffset; i < movesToCheck + sideOffset; i++) {
+		const Position start = Position(p.x, p.y);
+		const Position intermediate = Position(p.x + moves[i][0], p.y + moves[i][1]);
+		const Position end = Position(p.x + 2*moves[i][0], p.y + 2*moves[i][1]);
+		if (!end.isValid() || !intermediate.isValid()) {
+			continue;
+		}
+
+		const Piece* endPiece = getPiece(end);
+		const Piece* midPiece = getPiece(intermediate);
+
+		if (endPiece==nullptr && midPiece != nullptr && midPiece->side != piece->side) {
+			Board current = Board(*this);
+			current.removePiece(start);
+			current.removePiece(intermediate);
+			current.placePiece(end, *piece);
+			current.swapActivePlayer();
+			possibilities.insert(current);
+			current.getNextStatesWithJumpFrom(possibilities, end);
 		}
 	}
 }
@@ -158,23 +242,30 @@ bool Position::isValid() const {
 }
 
 std::ostream& operator<<(std::ostream& o, const Board& b) {
-	o << "--------" << std::endl;
+	o << ">-1-2-3-4-5-6-7-8-<" << std::endl;
+	o << ">-----------------<" << std::endl;
 	for (int y = 7; y >= 0; y--) {
+		o << static_cast<char>(y+'a');
 		for (int x = 0; x < 8; x++) {
+			//o << x << ":";
 			//o << "dealing with " << x << ", " << y << std::endl;
 			//Position pos = Position(x, y);
 			const Piece* p = b.getPiece(Position(x, y));
 			if (p == nullptr) {
-				o << " ";
+				o << "| ";
 			}
 			else {
 				//o << (*p) << "(<-" << x << " " << y << ") ";
-				o << (*p);
+				o << "|" << (*p);
 			}
 		}
-			o << std::endl;
+		o << "|" << static_cast<char>(y + 'a') << std::endl;
+		if (y != 0) {
+			o << "-------------------" << std::endl;
+		}
 	}
-	o << "--------" << std::endl;
+	o << ">-----------------<" << std::endl;
+	o << ">-1-2-3-4-5-6-7-8-<" << std::endl;
 
 	return o;
 }
@@ -213,4 +304,14 @@ bool operator<(const Piece& a, const Piece& b) {
 		return !a.side;
 	}
 	return !a.isKing;
+}
+
+std::ostream& operator<<(std::ostream& os, const Move& a) {
+	os << "[" << a.before << " -> " << a.after << "]";
+	return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Position& a) {
+	os << a.x << "," << a.y;
+	return os;
 }

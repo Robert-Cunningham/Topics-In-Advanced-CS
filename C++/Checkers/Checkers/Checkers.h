@@ -12,6 +12,7 @@ public:
 	int x;
 	int y;
 	Position(int myx, int myy) : x(myx), y(myy) {};
+	Position() : x(-1), y(-1) {};
 	bool isValid() const;
 };
 
@@ -44,6 +45,7 @@ public:
 	static Board getDefaultBoard();
 	std::set<Board> getNextStates() const;
 	void getNextStatesWithMoveFrom(std::set<Board>& results, const Position) const;
+	void getNextStatesWithJumpFrom(std::set<Board>& results, const Position) const;
 	std::map<Position, Piece> getPiecesOnSide(Side) const;
 	void placePiece(const Position, const Piece);
 	inline void removePiece(const Position);
@@ -52,6 +54,8 @@ public:
 	int getValue() const;
 	std::pair<int, Move> negamax(int, int, int) const;
 	void swapActivePlayer();
+	void readMove();
+	Move findBestMove(int depth) const;
 };
 class Game {
 	Board board;
