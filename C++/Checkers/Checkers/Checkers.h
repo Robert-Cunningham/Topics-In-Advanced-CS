@@ -16,6 +16,7 @@ public:
 	bool isValid() const;
 };
 
+
 class Piece {
 public:
 	Side side;
@@ -52,11 +53,19 @@ public:
 	const Piece* getPiece(const Position&) const;
 	friend std::ostream& operator<<(std::ostream&, const Board&);
 	int getValue() const;
-	std::pair<int, Move> negamax(int, int, int) const;
+	std::pair<int, Board> negamax(int, int, int) const;
 	void swapActivePlayer();
 	void readMove();
-	Move findBestMove(int depth) const;
+	Board findBestMove(int depth) const;
 };
 class Game {
+public:
 	Board board;
+	void playGame();
+	Game() : board(Board::getDefaultBoard()) {};
+	void playerTurn();
+	void AITurn();
 };
+
+std::ostream& operator<<(std::ostream&, const Move&);
+std::ostream& operator<<(std::ostream&, const Position&);

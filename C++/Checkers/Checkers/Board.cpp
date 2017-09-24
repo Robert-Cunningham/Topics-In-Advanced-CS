@@ -7,6 +7,25 @@
 #include <vector>
 #include <math.h>
 
+void Game::playGame() {
+	while (true) {
+		playerTurn();
+		board.swapActivePlayer();
+		AITurn();
+	}
+}
+
+void Game::playerTurn() {
+	std::cout << board << std::endl;
+	std::cout << "Please input your selection of move." << std::endl;
+	board.readMove();
+}
+
+void Game::AITurn() {
+	std::cout << "Determining AI move..." << std::endl;
+	board =*(new Board(board.findBestMove(8)));
+}
+
 std::set<Board> Board::getNextStates() const {
 	std::map<Position, Piece> myPieces = getPiecesOnSide(toMove);
 	std::map<Position, Piece>::iterator it;
@@ -19,36 +38,37 @@ std::set<Board> Board::getNextStates() const {
 	return moves;
 }
 
-Move Board::findBestMove(int depth) const {
+Board Board::findBestMove(int depth) const {
 	return negamax(depth, INT_MIN, INT_MAX).second;
 }
 
-std::pair<int, Move> Board::negamax(int depth, int alpha, int beta) const { //https://en.wikipedia.org/wiki/Negamax thanks for the algo reminder
+std::pair<int, Board> Board::negamax(int depth, int alpha, int beta) const { //https://en.wikipedia.org/wiki/Negamax thanks for the algo reminder
 	if (depth == 0) {
-		return std::make_pair(getValue(), mostRecentMove);
+		return std::make_pair(getValue(), Board(*this));
 	}
 	std::set<Board> nextStates = getNextStates();
 
 	if (nextStates.size() == 0) {
 		//the current player loses.
 		if (toMove == White) {
-			return std::make_pair(INT_MIN, mostRecentMove);
+			return std::make_pair(INT_MIN, Board(*this));
 		}
 		else {
-			return std::make_pair(INT_MAX, mostRecentMove);
+			return std::make_pair(INT_MAX, Board(*this));
 		}
 	}
 
-	Move bestMove = Move(White, Position(77, 77), Position(77, 77));
+	Board bestBoard;
 
 	int best = INT_MIN; //must initialize;
 	for (auto const& currentState : nextStates) {
 		int val;
-		Move otherMove = Move(White, Position(77, 77), Position(77, 77)); //figure out wtf is going on here; pretty sure this is what the next move after this one would be.
+		//Move otherMove = Move(White, Position(77, 77), Position(77, 77)); //figure out wtf is going on here; pretty sure this is what the next move after this one would be.
+		Board otherMove;
 		std::tie(val, otherMove) = currentState.negamax(depth - 1, -1 * beta, -1 * alpha);
 		if (val > best) {
 			best = val;
-			bestMove = currentState.mostRecentMove;
+			bestBoard = currentState;
 		}
 		best = std::max(val, best);
 		alpha = std::max(alpha, val);
@@ -58,57 +78,74 @@ std::pair<int, Move> Board::negamax(int depth, int alpha, int beta) const { //ht
 		}
 	}
 
-	return std::make_pair(best, mostRecentMove);
+	return std::make_pair(best, bestBoard);
 }
 
 void Board::readMove() {
-	std::string move;
-	std::cin >> move;
+	try {
+		std::string move;
+		std::cin >> move;
 
-	std::vector<Position> moves;
+		std::vector<Position> moves;
 
-	for (int currentIndex = 0; currentIndex < move.length() / 2; currentIndex++) {
-		int y = move.at(currentIndex * 2) - 'a';
-		int x = move.at(currentIndex * 2 + 1) - '1';
-		Position p = Position(x, y);
-		moves.push_back(p);
+		for (int currentIndex = 0; currentIndex < move.length() / 2; currentIndex++) {
+			int y = move.at(currentIndex * 2) - 'a';
+			int x = move.at(currentIndex * 2 + 1) - '1';
+			Position p = Position(x, y);
+			moves.push_back(p);
 
-		std::cout << p.x << "," << p.y << std::endl;
-	}
+			std::cout << p.x << "," << p.y << std::endl;
+		}
 
-	for (int currentIndex = 0; currentIndex < moves.size(); currentIndex++) {
-		if (currentIndex == 0) {
-			const Piece* myPiece = new Piece(*getPiece(moves.at(0)));
-			if (myPiece == nullptr) {
-				std::cout << "Illegal move." << std::endl;
+		for (int currentIndex = 0; currentIndex < moves.size(); currentIndex++) {
+			if (currentIndex == 0) {
+				if (getPiece(moves.at(0)) == nullptr) {
+					throw 99;
+				}
+				const Piece* myPiece = new Piece(*getPiece(moves.at(0)));
+				if (myPiece == nullptr) {
+					std::cout << "Illegal move." << std::endl;
+				}
+				else {
+					removePiece(moves.at(0));
+					placePiece(moves.at(moves.size() - 1), *myPiece);
+				}
 			}
-			else {
-				removePiece(moves.at(0));
-				placePiece(moves.at(moves.size() - 1), *myPiece);
-			}
-		} 
 
-		if (currentIndex > 0) { //check for a jump between this move and the previous one.
-			int xd = moves.at(currentIndex).x - moves.at(currentIndex - 1).x;
-			int yd = moves.at(currentIndex).y - moves.at(currentIndex - 1).y;
+			if (currentIndex > 0) { //check for a jump between this move and the previous one.
+				int xd = moves.at(currentIndex).x - moves.at(currentIndex - 1).x;
+				int yd = moves.at(currentIndex).y - moves.at(currentIndex - 1).y;
 
-			if (abs(xd) == 2 && abs(yd) == 2) {
-				Position deadPos = Position(moves.at(currentIndex - 1).x + xd / 2, moves.at(currentIndex - 1).y + yd / 2);
-				removePiece(deadPos);
+				if (abs(xd) == 2 && abs(yd) == 2) {
+					Position deadPos = Position(moves.at(currentIndex - 1).x + xd / 2, moves.at(currentIndex - 1).y + yd / 2);
+					removePiece(deadPos);
+				}
 			}
 		}
+	}
+	catch (...) {
+		std::cout << "Illegal move. Try again." << std::endl;
+		readMove();
 	}
 
 }
 
 int Board::getValue() const {
-	const int KINGVAL = 3;
-	const int NORMVAL = 1;
+	const int KINGVAL = 20;
+	const int NORMVAL = 7;
 	const int PERRANK = 1;
 	int blackCount = 0;
 	int whiteCount = 0;
 	for (auto const& x : pieces) {
-		(x.second.side == White ? whiteCount : blackCount) += (x.second.isKing ? KINGVAL : NORMVAL) + (x.second.side == White ? x.first.y : 7-x.first.y)*PERRANK; // betcha haven't seen any code as messy as this in a while!
+		if (x.second.side == White) {
+			if (x.second.isKing) whiteCount += KINGVAL;
+			else whiteCount += NORMVAL + PERRANK * x.first.y;
+		}
+		else if (x.second.side == Black) {
+			if (x.second.isKing) blackCount += KINGVAL;
+			else blackCount += NORMVAL + PERRANK * (7-x.first.y);
+		}
+		//(x.second.side == White ? whiteCount : blackCount) += (x.second.isKing ? KINGVAL : NORMVAL) + (x.second.side == White ? x.first.y : 7-x.first.y)*PERRANK; // betcha haven't seen any code as messy as this in a while!
 	}
 	return whiteCount - blackCount;
 }
@@ -265,7 +302,7 @@ std::ostream& operator<<(std::ostream& o, const Board& b) {
 		}
 	}
 	o << ">-----------------<" << std::endl;
-	o << ">-1-2-3-4-5-6-7-8-<" << std::endl;
+	o << ">-1-2-3-4-5-6-7-8-<" << "[" << b.getValue() << "]"<< std::endl;
 
 	return o;
 }
@@ -281,7 +318,12 @@ inline const Piece* Board::getPiece(const Position& pos) const {
 }
 
 inline void Board::placePiece(Position pos, Piece piece) {
+	if (pos.y == 7 && piece.side == White || pos.y == 0 && piece.side == Black) {
+		pieces[pos] = Piece(piece.side, true);
+	}
+	else {
 	pieces[pos] = piece;
+	}
 }
 
 inline void Board::removePiece(Position pos) {
