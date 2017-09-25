@@ -13,6 +13,30 @@ void wait() {
 
 int main()
 {
+	Game g;
+	g.playGame();
+	wait();
+	return 0;
+
+	g.board = Board();
+	//g.board.swapActivePlayer();
+	g.board.placePiece(Position(3, 6), Piece(Black, true));
+	g.board.placePiece(Position(7, 7), Piece(Black, true));
+	//b.placePiece(Position(2, 2), Piece(White));
+	g.board.placePiece(Position(2, 5), Piece(White));
+	//g.board.placePiece(Position(0, 2), Piece(White));
+	g.board.placePiece(Position(0, 3), Piece(White));
+	//g.board.placePiece(Position(7, 7), Piece(White));
+	std::cout << "Best Move: " << std::endl << g.board.findBestMove(5) << std::endl;
+	//wait();
+	g.board.removePiece(Position(7, 7));
+
+	std::cout << "Best Move: " << std::endl << g.board.findBestMove(5) << std::endl;
+	wait();
+	return 0;
+	//b.placePiece(Position(0, 2), Piece(Black));
+	//b.placePiece(Position(3, 3), Piece(Black));
+	//g.playGame();
 	//Board b = Board::getDefaultBoard();
 	//Board b;
 	//b.swapActivePlayer();
@@ -53,12 +77,10 @@ int main()
 	}
 	
 	*/
-	//for (auto const &current : next) {
-	//	std::cout << current << std::endl;
-	//}
+//	for (auto const &current : g.board.getNextStates()) {
+//		std::cout << current << std::endl;
+//	}
 
-	Game g;
-	g.playGame();
 	
 	wait();
     return 0;

@@ -8,9 +8,18 @@
 #include <math.h>
 
 void Game::playGame() {
+	std::cout << "The AI is a gentleman and allows you the honor of playing first." << std::endl;
 	while (true) {
+		if (board.getNextStates().size() == 0) {
+			std::cout << "You lose." << std::endl;
+			break;
+		}
 		playerTurn();
 		board.swapActivePlayer();
+		if (board.getNextStates().size() == 0) {
+			std::cout << "You Win." << std::endl;
+			break;
+		}
 		AITurn();
 	}
 }
@@ -19,11 +28,12 @@ void Game::playerTurn() {
 	std::cout << board << std::endl;
 	std::cout << "Please input your selection of move." << std::endl;
 	board.readMove();
+	std::cout << board << std::endl;
 }
 
 void Game::AITurn() {
 	std::cout << "Determining AI move..." << std::endl;
-	board =*(new Board(board.findBestMove(8)));
+	board =*(new Board(board.findBestMove(1)));
 }
 
 std::set<Board> Board::getNextStates() const {
@@ -66,6 +76,7 @@ std::pair<int, Board> Board::negamax(int depth, int alpha, int beta) const { //h
 		//Move otherMove = Move(White, Position(77, 77), Position(77, 77)); //figure out wtf is going on here; pretty sure this is what the next move after this one would be.
 		Board otherMove;
 		std::tie(val, otherMove) = currentState.negamax(depth - 1, -1 * beta, -1 * alpha);
+		val = val * -1;
 		if (val > best) {
 			best = val;
 			bestBoard = currentState;
@@ -94,7 +105,7 @@ void Board::readMove() {
 			Position p = Position(x, y);
 			moves.push_back(p);
 
-			std::cout << p.x << "," << p.y << std::endl;
+			//std::cout << p.x << "," << p.y << std::endl;
 		}
 
 		for (int currentIndex = 0; currentIndex < moves.size(); currentIndex++) {
