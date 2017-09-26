@@ -5,7 +5,7 @@
 #include <iostream>
 #include <set>
 
-enum Side{Black, White};
+enum Side{Black = -1, White = 1};
 
 class Position {
 public:
@@ -26,6 +26,7 @@ public:
 		//std::cout << "P-100" << std::endl;
 	};
 	friend std::ostream& operator<<(std::ostream&, const Piece&);
+	std::string toString() const;
 };
 
 class Move {
@@ -54,9 +55,14 @@ public:
 	friend std::ostream& operator<<(std::ostream&, const Board&);
 	int getValue() const;
 	std::pair<int, Board> negamax(int, int, int) const;
+	std::pair<int, Board> blackMinimax(int, int, int) const;
+	std::pair<int, Board> minimax(int) const;
+	std::pair<int, Board> whiteMinimax(int, int, int) const;
 	void swapActivePlayer();
 	void readMove();
 	Board findBestMove(int depth) const;
+	std::string toString() const;
+	friend Board fromString(std::string);
 };
 class Game {
 public:

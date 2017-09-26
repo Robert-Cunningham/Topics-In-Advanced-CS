@@ -13,13 +13,44 @@ void wait() {
 
 int main()
 {
+	
+	
 	Game g;
+	
+	//g.board = fromString("2---------B------W-W--------W------------------W--------W------W-");
+
+	//2---B-B-wb--------b-w----b---b------------------------B--b-------
 	g.playGame();
 	wait();
 	return 0;
 
-	g.board = Board();
+	//g.board = fromString("2-w-w-w-ww-w---w----w-w-wb-----w----w----b-b-b-b--b---b-bb-b-b-b-");
+	std::cout << g.board << std::endl;
+	//for (auto const& current : g.board.getNextStates()) {
+	//	std::cout << current << std::endl;
+	//}
+	g.AITurn();
+	std::cout << g.board << std::endl;
+	wait();
+	return 0;
+	//std::cout << g.board.toString().c_str() << std::endl;
+	//std::cout << Board::getDefaultBoard() << std::endl;
+	//std::cout << fromString("2-w-w-w-ww-w-w-w--w-w-w-w----------------b-b-b-b--b-b-b-bb-b-b-b-") << std::endl;
+	//std::cout << fromString("2-w-w-w-ww-w---w----w-w-wb-----w----w----b-b-b-b--b---b-bb-b-b-b-") << std::endl;
+	//2-w-w-w-ww-w---w----w-w-wb-----w----w----b-b-b-b--b---b-bb-b-b-b- (why not double jump?
+	//Board a = fromString("1-w-w-w-ww-w-w-w--b---w-ww-w-------------b-B-b-b--b---b-bb---b-bB");
+	//Board b = fromString("1-w-w-w-ww-w-w-w--b---w-ww-w-------------b---b-b--B---b-bb-b-b-bB");
+
+	//std::cout << a << std::endl << b << std::endl;
+	//std::cout << (a < b) << std::endl;
+	//wait();
+	//return 0;
 	//g.board.swapActivePlayer();
+	//1-w-w-w-ww-w-w-w--w-w-w-w----------------b-b-b-b--b-b-b-bb-b-b-b- (default)
+	//1-w-w-w-ww-w-w-w--b---w-ww-w-------------b-B-b-b--b---b-bb---b-bB (a)
+	//1-w-w-w-ww-w-w-w--b---w-ww-w-------------b---b-b--B---b-bb-b-b-bB (b)
+
+
 	g.board.placePiece(Position(3, 6), Piece(Black, true));
 	g.board.placePiece(Position(7, 7), Piece(Black, true));
 	//b.placePiece(Position(2, 2), Piece(White));
@@ -32,8 +63,8 @@ int main()
 	g.board.removePiece(Position(7, 7));
 
 	std::cout << "Best Move: " << std::endl << g.board.findBestMove(5) << std::endl;
-	wait();
-	return 0;
+	//wait();
+	//return 0;
 	//b.placePiece(Position(0, 2), Piece(Black));
 	//b.placePiece(Position(3, 3), Piece(Black));
 	//g.playGame();

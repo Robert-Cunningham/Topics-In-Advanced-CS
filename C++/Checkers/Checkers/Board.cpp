@@ -11,11 +11,12 @@ void Game::playGame() {
 	std::cout << "The AI is a gentleman and allows you the honor of playing first." << std::endl;
 	while (true) {
 		if (board.getNextStates().size() == 0) {
-			std::cout << "You lose." << std::endl;
+			std::cout << board << std::endl << "You lose." << std::endl;
 			break;
 		}
 		playerTurn();
 		board.swapActivePlayer();
+		std::cout << board.toString() << std::endl;
 		if (board.getNextStates().size() == 0) {
 			std::cout << "You Win." << std::endl;
 			break;
@@ -33,7 +34,7 @@ void Game::playerTurn() {
 
 void Game::AITurn() {
 	std::cout << "Determining AI move..." << std::endl;
-	board =*(new Board(board.findBestMove(1)));
+	board =*(new Board(board.findBestMove(7))); //7 causes an issue.
 }
 
 std::set<Board> Board::getNextStates() const {
@@ -49,23 +50,84 @@ std::set<Board> Board::getNextStates() const {
 }
 
 Board Board::findBestMove(int depth) const {
-	return negamax(depth, INT_MIN, INT_MAX).second;
+	Board b;
+	int val;
+	//std::tie(val, b) = negamax(depth, INT_MIN, INT_MAX);
+	std::tie(val, b) = minimax(depth);
+	std::cout << "Minimax value: " << val << "." << std::endl;
+	return b;
 }
 
+std::pair<int, Board> Board::minimax(int depth) const {
+	if (toMove == White) {
+		return whiteMinimax(depth, INT_MIN / 2, INT_MAX / 2);
+	}
+	else {
+		return blackMinimax(depth, INT_MIN / 2, INT_MAX / 2);
+	}
+}
+
+std::pair<int, Board> Board::whiteMinimax(int depth, int alpha, int beta) const { 
+	if (depth == 0) return std::make_pair(getValue(), Board(*this));
+	
+	std::set<Board> nextStates = getNextStates();
+
+	if (nextStates.size() == 0) return std::make_pair((INT_MIN/2), Board(*this));
+
+	Board bestBoard;
+	int best = INT_MIN; 
+	for (auto const& currentState : nextStates) {
+		int val;
+		Board otherMove;
+
+		std::tie(val, otherMove) = currentState.blackMinimax(depth - 1, alpha, beta);
+		if (val > best) {
+			best = val;
+			bestBoard = currentState;
+		}
+		alpha = std::max(alpha, val);
+
+		if (alpha >= beta) break;
+	}
+
+	return std::make_pair(best, bestBoard);
+}
+
+std::pair<int, Board> Board::blackMinimax(int depth, int alpha, int beta) const { 
+	if (depth == 0) return std::make_pair(getValue(), Board(*this));
+	
+	std::set<Board> nextStates = getNextStates();
+
+	if (nextStates.size() == 0) return std::make_pair((INT_MAX/2), Board(*this));
+
+	Board bestBoard;
+	int best = INT_MAX; 
+	for (auto const& currentState : nextStates) {
+		int val;
+		Board otherMove;
+
+		std::tie(val, otherMove) = currentState.whiteMinimax(depth - 1, alpha, beta);
+		if (val < best) {
+			best = val;
+			bestBoard = currentState;
+		}
+		beta = std::min(beta, val);
+
+		if (alpha >= beta) break;
+	}
+
+	return std::make_pair(best, bestBoard);
+}
 std::pair<int, Board> Board::negamax(int depth, int alpha, int beta) const { //https://en.wikipedia.org/wiki/Negamax thanks for the algo reminder
 	if (depth == 0) {
-		return std::make_pair(getValue(), Board(*this));
+		return std::make_pair(toMove * getValue(), Board(*this));
 	}
 	std::set<Board> nextStates = getNextStates();
 
 	if (nextStates.size() == 0) {
 		//the current player loses.
-		if (toMove == White) {
-			return std::make_pair(INT_MIN, Board(*this));
-		}
-		else {
-			return std::make_pair(INT_MAX, Board(*this));
-		}
+		std::cout << "someone lost." << std::endl;
+		return std::make_pair(toMove * (INT_MAX/2), Board(*this));
 	}
 
 	Board bestBoard;
@@ -77,11 +139,12 @@ std::pair<int, Board> Board::negamax(int depth, int alpha, int beta) const { //h
 		Board otherMove;
 		std::tie(val, otherMove) = currentState.negamax(depth - 1, -1 * beta, -1 * alpha);
 		val = val * -1;
+		//std::cout << "Observing " << std::endl << otherMove << " which has value: " << val << " at depth " << depth << std::endl;
 		if (val > best) {
 			best = val;
 			bestBoard = currentState;
 		}
-		best = std::max(val, best);
+		//best = std::max(val, best);
 		alpha = std::max(alpha, val);
 
 		if (alpha >= beta) {
@@ -219,9 +282,9 @@ void Board::getNextStatesWithJumpFrom(std::set<Board>& possibilities, const Posi
 			current.removePiece(start);
 			current.removePiece(intermediate);
 			current.placePiece(end, *piece);
+			current.getNextStatesWithJumpFrom(possibilities, end);
 			current.swapActivePlayer();
 			possibilities.insert(current);
-			current.getNextStatesWithJumpFrom(possibilities, end);
 		}
 	}
 }
@@ -264,24 +327,28 @@ Board Board::getDefaultBoard() {
 	return b;
 }
 
-std::ostream& operator<<(std::ostream& os, const Piece& p) {
-	if (p.side == White) {
-		if (p.isKing) {
-			os << "W";
+std::string Piece::toString() const {
+	
+	if (side == White) {
+		if (isKing) {
+			return "W";
 		}
 		else {
-			os << "w";
+			return "w";
 		}
 	}
 	else {
-		if (p.isKing) {
-			os << "B";
+		if (isKing) {
+			return "B";
 		}
 		else {
-			os << "b";
+			return "b";
 		}
 	}
+}
 
+std::ostream& operator<<(std::ostream& os, const Piece& p) {
+	os << p.toString();
 	return os;
 }
 
@@ -341,11 +408,51 @@ inline void Board::removePiece(Position pos) {
 	pieces.erase(pos);
 }
 
+std::string Board::toString() const {
+	std::string out;
+	out.append(toMove == White ? "1" : "2");
+	for (int y = 0; y < 8; y++) {
+		for (int x = 0; x < 8; x++) {
+			if (getPiece(Position(x, y)) != nullptr) {
+				out.append(getPiece(Position(x, y))->toString());
+			}
+			else {
+				out.append("-");
+			}
+		}
+	}
+	return out;
+}
+
+Board fromString(std::string in) {
+	Board b;
+	int counter = 0;
+	b.toMove = (in.at(0) == '1' ? White : Black);
+	counter++;
+	for (int y = 0; y < 8; y++) {
+		for (int x = 0; x < 8; x++) {
+			if (in.at(counter) != '-') {
+				char p = in.at(counter);
+				Piece piece;
+				if (p == 'W') piece = Piece(White, true);
+				if (p == 'B') piece = Piece(Black, true);
+				if (p == 'w') piece = Piece(White, false);
+				if (p == 'b') piece = Piece(Black, false);
+				
+				b.placePiece(Position(x, y), piece);
+			}
+			counter++;
+		}
+	}
+	return b;
+}
+
 inline bool operator<(const Position &a, const Position &b) {
 	return a.x * 10 + a.y < b.x * 10 + b.y;
 }
 
 inline bool operator<(const Board& a, const Board& b) {
+	//std::cout << "Comparing..." << a.toString().c_str() << std::endl << "and" << std::endl << b.toString().c_str() << std::endl;
 	return a.pieces < b.pieces;
 }
 
@@ -354,9 +461,9 @@ bool operator<(const Piece& a, const Piece& b) {
 		if (a.isKing == b.isKing) {
 			return false;
 		}
-		return !a.side;
+		return !a.isKing;
 	}
-	return !a.isKing;
+	return !a.side;
 }
 
 std::ostream& operator<<(std::ostream& os, const Move& a) {
